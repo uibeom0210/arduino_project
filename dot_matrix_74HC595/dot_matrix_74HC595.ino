@@ -1,4 +1,3 @@
-
 #define MATRIX_SIZE 8 // 8 * 8
 // Column Pin
 #define C1 A3
@@ -31,17 +30,22 @@
 
 uint8_t colPins[8]={ C1, C2, C3, C4, C5, C6, C7, C8};
 
-uint8_t matrixStatus[] = {0b0, 0b0, 0b0, 0b0, 0b0, 0b0, 0b0};
-
+uint8_t matrixStatus[] = {0b0, 0b0, 0b18, 0x42, 0x42, 0b18, 0b0, 0b0};
 
 void setup() {
   // put your setup code here, to run once:
-  
+  for(int i=0; i<MATRIX_SIZE; i++) {
+    pinMode(colPins[i], OUTPUT);
+  }
+  pinMode(SER_PIN, OUTPUT);
+  pinMode(SCK_PIN, OUTPUT);
+  pinMode(RCK_PIN, OUTPUT);
+  Serial.begin(9600);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-
+  displayMatrix();
 }
 
 void clear(){
@@ -61,7 +65,7 @@ void displayMatrix(){
     clear();
     writeRowData(rowbits); // prepare to write the row
     for(int col=0; col<MATRIX_SIZE; col++)
-      digitalWrite(colPins[MATRIX_SIZE-col], !extract_bits(matrixStatus[row], 0x01, col));
+      digitalWrite(colPins[7-col], !extract_bits(matrixStatus[row], 0x01, col));
     delay(1);
     writeRowData(0);
     rowbits >>= 1; 
