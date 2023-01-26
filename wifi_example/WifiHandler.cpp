@@ -14,19 +14,13 @@ SoftwareSerial ESP8266_serial(WIFI_RXD, WIFI_TXD);
 void wifiSetup(){
 	sendData("AT+RST\r\n", 2000);
 	sendData("AT+CWMODE=3\r\n", 1000);
-	sendData("AT+CWSAP=\"101-1203\",\"otz3zozo\",11,0\r\n", 5000);
+	sendData("AT+CWSAP=\"KCCI_STC_S\",\"kcci098#\",11,0\r\n", 1000);
 	sendData("AT+CWSAP?\r\n", 1000);
 
 	String income_CIFSR = "";
-	sendData("AT+CIFSR\r\n", 5000);
-	income_CIFSR = sendData("AT+CIFSR?\r\n", 1000);
-	while (1) {
-		sendData("AT+CIFSR\r\n", 5000);
-		income_CIFSR = sendData("AT+CIFSR?\r\n", 1000);
-		if (income_CIFSR.indexOf("no this fun") == -1) {
-			break;
-		}
-	}
+	do {
+    income_CIFSR = sendData("AT+CIFSR\r\n", 5000);
+	}while (income_CIFSR.indexOf("0.0.0.0") != -1);
 	sendData("AT+CIPMUX=1\r\n", 1000);
 	sendData("AT+CIPSERVER=1,80\r\n", 1000);
 	Serial.println("available");
