@@ -1,3 +1,5 @@
+#include <MsTimer2.h>
+
 #define MATRIX_SIZE 8 // 8 * 8
 // Column Pin
 #define C1 A3
@@ -30,8 +32,10 @@
 
 uint8_t colPins[8]={ C1, C2, C3, C4, C5, C6, C7, C8};
 
-uint8_t matrixStatus[] = {0b0, 0b0, 0b18, 0x42, 0x42, 0b18, 0b0, 0b0};
+uint8_t matrixStatus[2][8] ={{0b00010000, 0b00000000, 0b00011000, 0b00111101, 0b10111100, 0b00011000, 0b00000000, 0b00001000},
+                            {0b00000000, 0b01000010, 0b00011000, 0b00111100, 0b00111100, 0b00011000, 0b01000010, 0b00000000}};
 
+static byte state = 0;
 void setup() {
   // put your setup code here, to run once:
   for(int i=0; i<MATRIX_SIZE; i++) {
@@ -40,6 +44,8 @@ void setup() {
   pinMode(SER_PIN, OUTPUT);
   pinMode(SCK_PIN, OUTPUT);
   pinMode(RCK_PIN, OUTPUT);
+  MsTimer2::set(800, timerDot);
+  MsTimer2::start();
   Serial.begin(9600);
 }
 
@@ -60,14 +66,18 @@ void writeRowData(byte data) {
 }
 
 void displayMatrix(){
-  int rowbits = 0x80; //0b10000000
+  int rowbits = 0b10000000;
   for(int row=0; row<MATRIX_SIZE; row++) {
     clear();
     writeRowData(rowbits); // prepare to write the row
     for(int col=0; col<MATRIX_SIZE; col++)
-      digitalWrite(colPins[7-col], !extract_bits(matrixStatus[row], 0x01, col));
+      digitalWrite(colPins[7-col], !extract_bits(matrixStatus[state][row], 0x01, col));
     delay(1);
     writeRowData(0);
     rowbits >>= 1; 
-  } 
+  }
+}
+
+void timerDot() {
+  state = !state;
 }
