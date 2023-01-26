@@ -3,11 +3,6 @@
 
 #define LED 13
 
-#ifndef WIFIRXD
-#define WIFI_RXD 6
-#define WIFI_TXD 7
-#endif // WIFIRXD
-
 extern SoftwareSerial ESP8266_serial;
 String income_wifi = "";
 
@@ -18,7 +13,7 @@ void setup() {
   pinMode(LED, OUTPUT);
   digitalWrite(LED, HIGH);
   delay(500);
-  void wifiSetup();
+  wifiSetup();
 }
 
 void loop() {
@@ -43,3 +38,5 @@ void loop() {
     delay(1000);
   }
 }
+
+
