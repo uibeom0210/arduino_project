@@ -1,4 +1,6 @@
 #include <MsTimer2.h>
+#include <avr/sleep.h>
+#include <avr/power.h>
 
 #define MATRIX_SIZE 8 // 8 * 8
 
@@ -44,6 +46,13 @@
 #define LINE6 6
 #define LOWER 7
 
+#define LED13 13
+#define BUTTON 2
+
+#define SLEEP 0
+#define WAKE 1
+
+
 // Bit extract macro function : data 에서 loc 번째 비트 부터 area 영역 만큼 추출
 // ex) extract_bits( 0b00000010, 1, 2) 결과 1 -> 0b00000010 데이터의 2번째 비트 1크기 만큼 추출  
 #define extract_bits(data, area, loc) (((data) >> (loc)) & (area))
@@ -55,9 +64,15 @@ enum Weather weather;
 uint8_t patterns[4][2][8] = {MATRIX_SUN, MATRIX_CLOUD, MATRIX_RAIN, MATRIX_SNOW};
 
 static byte state = 0;
+volatile byte sleepState = SLEEP;
+
+ISR(WDT_vect){}
 
 void setup() {
   // put your setup code here, to run once:
+  pinMode(LED13, OUTPUT);
+  digitalWrite(LED13, LOW);
+
   for(int i=0; i<MATRIX_SIZE; i++) {
     pinMode(colPins[i], OUTPUT);
   }
@@ -65,15 +80,19 @@ void setup() {
   pinMode(SCK_PIN, OUTPUT);
   pinMode(RCK_PIN, OUTPUT);
   //MsTimer2::set(800, timerDot); (sun, cloud)1
-  MsTimer2::set(800, timerDot);
-  MsTimer2::start();
+  
   Serial.begin(9600);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-
-  displayMatrix(weather=RAIN);
+  if(sleepState == WAKE){
+    digitalWrite(LED13, HIGH);
+    displayMatrix(weather=RAIN);
+  }
+  else if(sleepState == SLEEP){
+    sleep();
+  }
 }
 
 void clear(){
@@ -102,6 +121,33 @@ void displayMatrix(byte number) {
   }
 }
 
-void timerDot() {
-  state = !state;
+void sleep(){
+  sleep_enable();
+  MsTimer2::stop();
+  attachInterrupt(digitalPinToInterrupt(BUTTON), buttonClick, FALLING);
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+  digitalWrite(LED13, LOW);
+  delay(1000);
+  sleep_mode(); // CPU sleep
+  Serial.println("just woke up!");
+  detachInterrupt(digitalPinToInterrupt(BUTTON));
 }
+
+void buttonClick(){
+  sleepState = WAKE;
+  sleep_disable(); // When wake
+  MsTimer2::set(1000, timerDot);
+  MsTimer2::start();
+}
+
+void timerDot() {
+  static byte count = 0;
+  count++;
+  state = !state;
+  if (count == 7){
+    sleepState = SLEEP;
+    count = 0;
+  }
+}
+
+
