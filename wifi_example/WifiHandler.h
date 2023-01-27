@@ -21,7 +21,10 @@
 
 
 void wifiSetup();
-String sendData(String command, const int timeout);
 
+String getIpAdress(char str[], String income);
+void getData();
+void sendData(String command);
+String sendAT(String atCommand, const int timeout);
 
 #endif // WifiHandler_h

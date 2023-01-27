@@ -50,6 +50,15 @@ uint8_t matrixSun[2][8] ={{0b00010000, 0b00000000, 0b00011000, 0b00111101, 0b101
 
 static byte state = 0;
 
+//rain
+uint8_t matrixStatus[2][8] ={{0b01000010, 0b01001010, 0b01001010, 0b00001000, 0b00100001, 0b10100101, 0b10100101, 0b10000100},
+                            {0b10001010, 0b00000000, 0b01000010, 0b01001010, 0b01001010, 0b00001000, 0b00100001, 0b10100101}};
+
+//snow
+//uint8_t matrixStatus[2][8] ={{0b01000001, 0b00000100, 0b00010000, 0b10000000, 0b00001001, 0b00100000, 0b00000000, 0b10000010},
+//                            {0b10001000, 0b00000000, 0b01000001, 0b00000100, 0b00010000, 0b10000000, 0b00001001, 0b00100000}};
+
+static byte state = 0;
 void setup() {
   // put your setup code here, to run once:
   for(int i=0; i<MATRIX_SIZE; i++) {
@@ -59,6 +68,7 @@ void setup() {
   pinMode(SCK_PIN, OUTPUT);
   pinMode(RCK_PIN, OUTPUT);
   //MsTimer2::set(800, timerDot); (sun, cloud)1
+
   MsTimer2::set(800, timerDot);
   MsTimer2::start();
   pinMode(sensor, INPUT);
@@ -81,6 +91,7 @@ void writeRowData(byte data) {
   shiftOut(SER_PIN, SCK_PIN, LSBFIRST, data);
   digitalWrite(RCK_PIN, HIGH);
 }
+
 
 void displayMatrix() {
   int rowbits = 0b10000000;
