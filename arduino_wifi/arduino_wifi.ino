@@ -65,10 +65,12 @@ void makeSendmessage(){
   int temperature = tempString.toInt();
   String sign = "";
   if (temperature < 0)
+    temperature = (-1)*temperature;
     sign = "1";
   else
     sign = "0";
 
+  tempString = String(temperature);
   sendMessage = sign + "#" + tempString;
 }
 
