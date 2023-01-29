@@ -19,12 +19,17 @@
 #define WIFI_RXD 6
 #define WIFI_TXD 7
 
+#define SERVER_IP "27.101.215.194"
+#define DEBUG_AT 0
 
 void wifiSetup();
-
-String getIpAdress(char str[], String income);
-void getData();
-void sendData(String command);
+String makeBaseData(String timeString);
+String convertMonth(String rawMonth);
+String makeBaseTime(String rawTime);
+String getIpAdress(String income);
+void getWeatherData();
+String parseWeatherData();
+String getServerTime();
 String sendAT(String atCommand, const int timeout);
 
 #endif // WifiHandler_h
