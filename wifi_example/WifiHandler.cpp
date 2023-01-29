@@ -14,14 +14,12 @@ SoftwareSerial ESP8266_serial(WIFI_RXD, WIFI_TXD);
 
 String getWeatherDataServiceKey = "GET /1360000/VilageFcstInfoService_2.0/getVilageFcst?serviceKey=vwa%2FDDlSjq1JMK4NX8ZJ983sV0p3pCZUSE%2FD3q6PIv193RHWhA35iY8mKkmifefajFco03SsO2lCru6g0LPPYw%3D%3D&pageNo=1&numOfRows=10&dataType=JSON&";
 String getWeatherDataBaseData = "";
-String getWeatherDataLastData = "&nx=58&ny=126\r\n";
+String getWeatherDataLastData = "&nx=98&ny=76\r\n";
 String rawData = "";
-String parsedData1 = "";
-String parsedData2 = "";
+String parsedData = "";
 
 void wifiSetup() {
   String assignedIP = "";
-  String timeHeader = "";
   sendAT("AT+RST\r\n", 2000);
   sendAT("AT+CWMODE=3\r\n", 1000);
   sendAT("AT+CWSAP=\"KCCI_STC_S\",\"kcci098#\",11,0\r\n", 1000);
@@ -32,16 +30,6 @@ void wifiSetup() {
     income_CIFSR = sendAT("AT+CIFSR\r\n", 5000);
   } while (income_CIFSR.indexOf("0.0.0.0") != -1);
   assignedIP = getIpAdress(income_CIFSR);
-
-  sendAT("AT+CIPSTART=\"TCP\",\"27.101.215.194\",80\r\n", 1000);
-  timeHeader = getServerTime();
-  Serial.println(timeHeader);
-  getWeatherDataBaseData = makeBaseData(timeHeader);
-  Serial.println(getWeatherDataBaseData);
-  sendAT("AT+CIPMODE=1\r\n", 1000);
-  sendAT("AT+CIPMUX=0\r\n", 1000);
-
-  delay(2000);
 }
 
 String makeBaseData(String timeString) {
@@ -140,7 +128,9 @@ String getIpAdress(String income) {
 }
 
 void getWeatherData() {
-  
+  sendAT("AT+CIPMODE=1\r\n", 1000);
+  sendAT("AT+CIPMUX=0\r\n", 1000);
+  delay(2000);
   sendAT("AT+CIPSTART=\"TCP\",\"27.101.215.194\",80\r\n", 1000);
   sendAT("AT+CIPSEND\r\n", 1000);
   ESP8266_serial.print(getWeatherDataServiceKey);
@@ -159,31 +149,34 @@ String parseWeatherData(){
   sendAT("+++", 1000);
   Serial.println("My data");
   Serial.println(rawData);
-  parsedData1 = rawData.substring(rawData.indexOf("TMP")-1, rawData.indexOf("UUU")+3);
-  Serial.println("My parsed data1");
-  Serial.println(parsedData1);
-  parsedData2 = parsedData1.substring(parsedData1.indexOf("fcstValue") + 12, parsedData1.indexOf("nx") - 3);
-  Serial.println("My parsed data2");
-  Serial.println(parsedData2);
-  return parsedData2;
+  parsedData = rawData.substring(rawData.indexOf("fcstValue") + 12, rawData.indexOf("nx")-3);
+  Serial.println("My parsed data");
+  Serial.println(parsedData);
+  return parsedData;
 }
 
-String getServerTime() {
+void getServerTime() {
   String income_HEAD = "";
+  sendAT("AT+CIPSTART=\"TCP\",\"27.101.215.194\",80\r\n", 1000);
   sendAT("AT+CIPMODE=0\r\n", 1000);
   sendAT("AT+CIPSEND=6\r\n", 1000);
   ESP8266_serial.print("HEAD\r\n");
 
   while (1) {
     if (ESP8266_serial.available()) {
-      if (ESP8266_serial.find("Date")) {
+      if (ESP8266_serial.find("Date")) 
         income_HEAD = ESP8266_serial.readStringUntil('\r');
-      }
-      //Serial.println(income_HEAD);
-    } else
+    } 
+    else
       break;
   }
-  return income_HEAD;
+#if DEBUG_TEMP
+  Serial.println(income_HEAD);
+#endif //DEBUG_TEMP
+  getWeatherDataBaseData = makeBaseData(income_HEAD);
+#if DEBUG_TEMP
+  Serial.println(getWeatherDataBaseData);
+#endif //DEBUG_TEMP
 }
 
 String sendAT(String atCommand, const int timeout) {
