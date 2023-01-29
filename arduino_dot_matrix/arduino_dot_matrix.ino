@@ -1,3 +1,5 @@
+#include <SoftwareSerial.h>
+
 #include <MsTimer2.h>
 #include <avr/sleep.h>
 #include <avr/power.h>
@@ -5,21 +7,46 @@
 #define MATRIX_SIZE 8 // 8 * 8
 
 #define MATRIX_SUN { \
-  {0b00010000, 0b00000000, 0b00011000, 0b00111101, 0b10111100, 0b00011000, 0b00000000, 0b00001000}, \
-  {0b00000000, 0b01000010, 0b00011000, 0b00111100, 0b00111100, 0b00011000, 0b01000010, 0b00000000}, \
-}
-#define MATRIX_CLOUD { \
-  {0b01111000, 0b11111100, 0b01111000, 0b00000000, 0b00011110, 0b00111111, 0b00011110, 0b00000000}, \
-  {0b00011110, 0b00111111, 0b00011110, 0b00000000, 0b01111000, 0b11111100, 0b01111000, 0b00000000}, \
-}
-#define MATRIX_RAIN { \
-  {0b01000010, 0b01001010, 0b01001010, 0b00001000, 0b00100001, 0b10100101, 0b10100101, 0b10000100}, \
-  {0b10001010, 0b00000000, 0b01000010, 0b01001010, 0b01001010, 0b00001000, 0b00100001, 0b10100101}, \
+  {0b01000000, 0b00011001, 0b00111100, 0b01111110, 0b01111110, 0b00111100, 0b10011000, 0b00000010}, \
+  {0b00000010, 0b10011000, 0b00111100, 0b01111110, 0b01111110, 0b00111100, 0b00011001, 0b01000000}  \
 }
 #define MATRIX_SNOW { \
-  {0b01000001, 0b00000100, 0b00010000, 0b10000000, 0b00001001, 0b00100000, 0b00000000, 0b10000010}, \
-  {0b10001000, 0b00000000, 0b01000001, 0b00000100, 0b00010000, 0b10000000, 0b00001001, 0b00100000}, \
+  {0b00011000, 0b01011010, 0b00100100, 0b11011011, 0b11011011, 0b00100100, 0b01011010, 0b00011000}, \
+  {0b11100111, 0b10100101, 0b11011011, 0b00100100, 0b00100100, 0b11011011, 0b10100101, 0b11100111}  \
 }
+
+#define MATRIX_ZERO { \
+  0b00000000, 0b00001110, 0b00001010, 0b00001010, 0b00001010, 0b00001110, 0b00000000, 0b00000000, \
+}
+#define MATRIX_ONE { \
+  0b00000000, 0b00000100, 0b00001100, 0b00000100, 0b00000100, 0b00001110, 0b00000000, 0b00000000, \
+}
+#define MATRIX_TWO { \
+  0b00000000, 0b00001110, 0b00000010, 0b00001110, 0b00001000, 0b00001110, 0b00000000, 0b00000000, \
+}
+#define MATRIX_THREE { \
+  0b00000000, 0b00001110, 0b00000010, 0b00001110, 0b00000010, 0b00001110, 0b00000000, 0b00000000, \
+}
+#define MATRIX_FOUR { \
+  0b00000000, 0b00001010, 0b00001010, 0b00001110, 0b00000010, 0b00000010, 0b00000000, 0b00000000, \
+}
+#define MATRIX_FIVE { \
+  0b00000000, 0b00001110, 0b00001000, 0b00001110, 0b00000010, 0b00001110, 0b00000000, 0b00000000, \
+}
+#define MATRIX_SIX { \
+  0b00000000, 0b00001110, 0b00001000, 0b00001110, 0b00001010, 0b00001110, 0b00000000, 0b00000000, \
+}
+#define MATRIX_SEVEN { \
+  0b00000000, 0b00001110, 0b00001010, 0b00000010, 0b00000010, 0b00000010, 0b00000000, 0b00000000, \
+}
+#define MATRIX_EIGHT { \
+  0b00000000, 0b00001110, 0b00001010, 0b00001110, 0b00001010, 0b00001110, 0b00000000, 0b00000000, \
+}
+#define MATRIX_NINE { \
+  0b00000000, 0b00001110, 0b00001010, 0b00001110, 0b00000010, 0b00001110, 0b00000000, 0b00000000, \
+}
+
+#define SET_MINUS 0b01100000
 
 // Column Pin
 #define C1 A3
@@ -52,24 +79,35 @@
 #define SLEEP 0
 #define WAKE 1
 
-
-// Bit extract macro function : data 에서 loc 번째 비트 부터 area 영역 만큼 추출
+// Bit extract macro function : data 에서 bit 번째 비트 부터 count 영역 만큼 추출
 // ex) extract_bits( 0b00000010, 1, 2) 결과 1 -> 0b00000010 데이터의 2번째 비트 1크기 만큼 추출  
-#define extract_bits(data, area, loc) (((data) >> (loc)) & (area))
+#define extract_bits(data, count, bit) (((data) >> (bit)) & (count))
 
 uint8_t colPins[8]={ C1, C2, C3, C4, C5, C6, C7, C8};
 
-enum Weather { SUN, CLOUD, RAIN, SNOW };
-enum Weather weather;
-uint8_t patterns[4][2][8] = {MATRIX_SUN, MATRIX_CLOUD, MATRIX_RAIN, MATRIX_SNOW};
+enum Picture { WARM, COLD };
+enum Picture picture;
+
+enum Temperature { ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE };
+enum Temperature temp;
+
+uint8_t patterns[2][2][8] = {MATRIX_SUN, MATRIX_SNOW};
+int numbers[10][8] = {MATRIX_ZERO, MATRIX_ONE, MATRIX_TWO, MATRIX_THREE, MATRIX_FOUR, MATRIX_FIVE, MATRIX_SIX, MATRIX_SEVEN, MATRIX_EIGHT, MATRIX_NINE};
+uint8_t minus = SET_MINUS;
 
 static byte state = 0;
 volatile byte sleepState = SLEEP;
 
+#define P_RXD 6
+#define P_TXD 7
+SoftwareSerial P_serial(P_RXD, P_TXD);
+String temperatureString = "";
+byte getData = 0;
+int temperature = 0;
 ISR(WDT_vect){}
 
 void setup() {
-  // put your setup code here, to run once:
+  P_serial.begin(9600);
   pinMode(LED13, OUTPUT);
   digitalWrite(LED13, LOW);
 
@@ -79,16 +117,43 @@ void setup() {
   pinMode(SER_PIN, OUTPUT);
   pinMode(SCK_PIN, OUTPUT);
   pinMode(RCK_PIN, OUTPUT);
-  //MsTimer2::set(800, timerDot); (sun, cloud)1
   
   Serial.begin(9600);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
   if(sleepState == WAKE){
-    digitalWrite(LED13, HIGH);
-    displayMatrix(weather=RAIN);
+    if(getData == 0){
+      P_serial.println("@");
+      while(P_serial.available()) {
+        temperatureString = P_serial.readStringUntil('\n');
+      }
+      char str[20];
+      unsigned int length = temperatureString.length();
+      temperatureString.toCharArray(str, length);
+      int i = 0;
+      char *sArr[2];
+      char *ptr = NULL;
+
+      ptr = strtok(str, "#");
+      while(ptr != NULL){
+        sArr[i++] = ptr;
+        ptr = strtok(NULL, "#");
+      }
+      int sign = atoi(sArr[0]);
+      int number = atoi(sArr[1]);
+      if(sign >= 0){
+        temperature = number;
+      }
+      else{
+        temperature = (-1)*number;
+      }
+      getData = 1;
+    }
+    else{
+      digitalWrite(LED13, HIGH);
+      displayMatrix(temperature);
+    }
   }
   else if(sleepState == SLEEP){
     sleep();
@@ -107,17 +172,57 @@ void writeRowData(byte data) {
   digitalWrite(RCK_PIN, HIGH);
 }
 
-void displayMatrix(byte number) {
+void displayMatrix(int temperature) {
   int rowbits = 0b10000000;
-  for(int row=0; row<MATRIX_SIZE; row++) {
-    clear();
-    writeRowData(rowbits); // prepare to write the row
-    for(int col=0; col<MATRIX_SIZE; col++) {
-      digitalWrite(colPins[7-col], !extract_bits(patterns[number][state][row], 0x01, col));
+  if(temperature >= 10){
+    for(int row=0; row<MATRIX_SIZE; row++) {
+      clear();
+      writeRowData(rowbits); // prepare to write the row
+      for(int col=0; col<MATRIX_SIZE; col++) {
+        digitalWrite(colPins[7-col], !extract_bits(patterns[WARM][state][row], 0x01, col));
+      }
+      delay(1);
+      writeRowData(0);
+      rowbits >>= 1; 
     }
-    delay(1);
-    writeRowData(0);
-    rowbits >>= 1; 
+  }
+  else if(temperature >= 0){
+    for(int row=0; row<MATRIX_SIZE; row++) {
+      clear();
+      writeRowData(rowbits); // prepare to write the row
+      for(int col=0; col<MATRIX_SIZE; col++) {
+        digitalWrite(colPins[7-col], !extract_bits(numbers[temperature][row], 0x01, col));
+      }
+      delay(1);
+      writeRowData(0);
+      rowbits >>= 1; 
+    }
+  }
+  else if(temperature >= -9){
+    temperature = (-1)*temperature;
+    numbers[temperature][3] = numbers[temperature][3] + minus;
+    for(int row=0; row<MATRIX_SIZE; row++) {
+      clear();
+      writeRowData(rowbits); // prepare to write the row
+      for(int col=0; col<MATRIX_SIZE; col++) {
+        digitalWrite(colPins[7-col], !extract_bits(numbers[temperature][row], 0x01, col));
+      }
+      delay(1);
+      writeRowData(0);
+      rowbits >>= 1; 
+    }
+  }
+  else {
+    for(int row=0; row<MATRIX_SIZE; row++) {
+      clear();
+      writeRowData(rowbits); // prepare to write the row
+      for(int col=0; col<MATRIX_SIZE; col++) {
+        digitalWrite(colPins[7-col], !extract_bits(patterns[COLD][state][row], 0x01, col));
+      }
+      delay(1);
+      writeRowData(0);
+      rowbits >>= 1; 
+    }
   }
 }
 
@@ -144,10 +249,8 @@ void timerDot() {
   static byte count = 0;
   count++;
   state = !state;
-  if (count == 7){
+  if (count == 10){
     sleepState = SLEEP;
     count = 0;
   }
 }
-
-
