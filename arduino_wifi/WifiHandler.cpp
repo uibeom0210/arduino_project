@@ -122,7 +122,6 @@ String getIpAdress(String income) {
   while (ptr != NULL) {
     sArr[i++] = ptr;
     ptr = strtok(NULL, "\r\n");
-    //Serial.println(sArr[i-1]);
   }
   return sArr[2];
 }
@@ -147,11 +146,15 @@ void getWeatherData() {
 
 String parseWeatherData(){
   sendAT("+++", 1000);
+#if DEBUG_TEMP
   Serial.println("My data");
   Serial.println(rawData);
+#endif //DEBUG_TEMP
   parsedData = rawData.substring(rawData.indexOf("fcstValue") + 12, rawData.indexOf("nx")-3);
+#if DEBUG_TEMP
   Serial.println("My parsed data");
   Serial.println(parsedData);
+#endif //DEBUG_TEMP
   return parsedData;
 }
 
