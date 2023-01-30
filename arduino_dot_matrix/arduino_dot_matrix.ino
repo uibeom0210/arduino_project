@@ -79,9 +79,8 @@
 #define SLEEP 0
 #define WAKE 1
 
-// Bit extract macro function : data 에서 bit 번째 비트 부터 count 영역 만큼 추출
-// ex) extract_bits( 0b00000010, 1, 2) 결과 1 -> 0b00000010 데이터의 2번째 비트 1크기 만큼 추출  
-#define extract_bits(data, count, bit) (((data) >> (bit)) & (count))
+// Bit extract macro function : data 에서 count 번째 비트 부터 bit와 비교하여 추출
+#define extract_bits(data, bit, count) (((data) >> (count)) & (bit))
 
 uint8_t colPins[8]={ C1, C2, C3, C4, C5, C6, C7, C8};
 
